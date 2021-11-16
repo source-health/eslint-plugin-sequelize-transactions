@@ -1,9 +1,6 @@
 import { Rule } from "eslint";
 import { Expression, Node as ESTreeNode, SpreadElement } from "estree";
 
-interface NodeParentExtension {
-  parent: Node;
-}
 type Node = ESTreeNode & {
   parent: ESTreeNode;
 };

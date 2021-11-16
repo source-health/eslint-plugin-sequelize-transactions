@@ -7,7 +7,8 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --no-splitting --minify"
+    "build": "tsup src/index.ts --no-splitting --minify",
+    "check:typescript": "tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/eslint": "^7.29.0",

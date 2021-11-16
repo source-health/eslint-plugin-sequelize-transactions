@@ -1,0 +1,21 @@
+{
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*.ts", "./@types/**/*.d.ts", "./jest/**/*.ts"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": ["es5", "dom", "es2015", "es2019", "esnext.array", "esnext"],
+    "module": "commonjs",
+    "target": "ES2020",
+    "typeRoots": ["node_modules/@types", "../node_modules/@types", "./@types"]
+  }
+}
