@@ -7,7 +7,7 @@
     "dist/**"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --no-splitting --minify",
+    "build": "tsup src/index.ts --no-splitting",
     "check:typescript": "tsc --project tsconfig.json --noEmit"
   },
   "devDependencies": {
