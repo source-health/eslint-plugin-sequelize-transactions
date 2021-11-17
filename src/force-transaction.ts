@@ -1,38 +1,34 @@
-import { Rule } from "eslint";
-import {
-  CallExpression,
-  Expression,
-  Node as ESTreeNode,
-  SpreadElement,
-} from "estree";
+import { Rule } from 'eslint'
+// eslint-disable-next-line import/no-unresolved
+import { CallExpression, Node as ESTreeNode, Expression, SpreadElement } from 'estree'
 
 const FUNCTIONS_REQUIRING_TRANSACTION = new Set<string>([
-  "create",
-  "update",
-  "destroy",
-  "save",
-  "bulkCreate",
-]);
-const TRANSACTION_KEY = "transaction" as const;
+  'create',
+  'update',
+  'destroy',
+  'save',
+  'bulkCreate,',
+])
+const TRANSACTION_KEY = 'transaction' as const
 
 type Node = ESTreeNode & {
-  parent: Node | null;
-};
+  parent: Node | null
+}
 
 /**
  * Helper function - is the given function call argument an object and if so, does it contain 'transaction' as a key?
  */
 function hasTransactionProperty(argument: Expression | SpreadElement): boolean {
-  if (argument.type !== "ObjectExpression") {
-    return false;
+  if (argument.type !== 'ObjectExpression') {
+    return false
   }
   const transaction = argument.properties.find(
     (prop) =>
-      prop.type === "Property" &&
-      prop.key.type === "Identifier" &&
-      prop.key.name === TRANSACTION_KEY
-  );
-  return !!transaction;
+      prop.type === 'Property' &&
+      prop.key.type === 'Identifier' &&
+      prop.key.name === TRANSACTION_KEY,
+  )
+  return !!transaction
 }
 
 /**
@@ -40,9 +36,9 @@ function hasTransactionProperty(argument: Expression | SpreadElement): boolean {
  * objects with 'transaction' as a key?
  */
 function hasTransactionArgument(node: CallExpression): boolean {
-  const args = node.arguments;
-  const argWithTransaction = args.find((arg) => hasTransactionProperty(arg));
-  return !!argWithTransaction;
+  const args = node.arguments
+  const argWithTransaction = args.find((arg) => hasTransactionProperty(arg))
+  return !!argWithTransaction
 }
 
 /**
@@ -54,30 +50,24 @@ function hasTransactionArgument(node: CallExpression): boolean {
  */
 function getParentName(node: Node): string | undefined {
   if (!node.parent) {
-    return undefined;
+    return undefined
   }
   if (
-    node.parent.type === "MemberExpression" &&
-    node.parent.object.type === "MemberExpression" &&
-    node.parent.object.property.type === "Identifier"
+    node.parent.type === 'MemberExpression' &&
+    node.parent.object.type === 'MemberExpression' &&
+    node.parent.object.property.type === 'Identifier'
   ) {
-    return node.parent.object.property.name;
+    return node.parent.object.property.name
   }
 
-  if (
-    node.parent.type === "MemberExpression" &&
-    node.parent.object.type === "ThisExpression"
-  ) {
-    return "this";
+  if (node.parent.type === 'MemberExpression' && node.parent.object.type === 'ThisExpression') {
+    return 'this'
   }
 
-  if (
-    node.parent.type === "MemberExpression" &&
-    node.parent.object.type === "Identifier"
-  ) {
-    return node.parent.object.name;
+  if (node.parent.type === 'MemberExpression' && node.parent.object.type === 'Identifier') {
+    return node.parent.object.name
   }
-  return undefined;
+  return undefined
 }
 
 /**
@@ -85,48 +75,45 @@ function getParentName(node: Node): string | undefined {
  */
 function parentIsIgnored(node: Node, ignorePatterns: RegExp[]): boolean {
   if (ignorePatterns.length === 0) {
-    return false;
+    return false
   }
-  const parentName = getParentName(node);
+  const parentName = getParentName(node)
   if (parentName === undefined) {
-    return false;
+    return false
   }
   for (const ignorePattern of ignorePatterns) {
     if (parentName.match(ignorePattern)) {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 }
 
 /** Helper: recursively look upwards in the AST hierarchy to see if we are part of a call expression.
  * If we are, then return the call expression, if not, after a few levels, break out and return undefined.
  * We need the parent call expression to inspect its arguments.
  */
-function getCallExpression(
-  node: Node | null,
-  depth: number = 0
-): CallExpression | undefined {
+function getCallExpression(node: Node | null, depth: number = 0): CallExpression | undefined {
   if (!node) {
-    return undefined;
+    return undefined
   }
-  if (node.type === "CallExpression") {
-    return node;
+  if (node.type === 'CallExpression') {
+    return node
   }
   if (depth > 4) {
-    return undefined;
+    return undefined
   }
-  if ("parent" in node) {
-    return getCallExpression(node.parent, depth + 1);
+  if ('parent' in node) {
+    return getCallExpression(node.parent, depth + 1)
   }
-  return undefined;
+  return undefined
 }
 
 /**
  * Options - the shape of the options that can be defined in eslintrc
  */
 interface Options {
-  ignorePatterns?: string[];
+  ignorePatterns?: string[]
 }
 
 /**
@@ -135,43 +122,43 @@ interface Options {
  */
 function parseOptions(options: unknown[]): Options {
   if (options.length === 0) {
-    return {};
+    return {}
   }
-  return options[0] as Options;
+  return options[0] as Options
 }
 
 /**
  * The rule factory itself.
  */
 export function forceTransaction(context: Rule.RuleContext): Rule.RuleListener {
-  const options = parseOptions(context.options);
+  const options = parseOptions(context.options)
   const ignorePatterns = (options.ignorePatterns ?? []).map(
-    (pattern: string) => new RegExp(pattern)
-  );
+    (pattern: string) => new RegExp(pattern),
+  )
 
   return {
     Identifier(node) {
       // Quick return if we aren't looking at a potential Sequelize function call
       if (!FUNCTIONS_REQUIRING_TRANSACTION.has(node.name)) {
-        return;
+        return
       }
       // Quick return if we should ignore this based on the name of the parent in the member expression.
       if (parentIsIgnored(node, ignorePatterns)) {
-        return;
+        return
       }
 
       // Grab the call expression, if this is part of a call expression
-      const callExpression = getCallExpression(node);
+      const callExpression = getCallExpression(node)
       if (callExpression === undefined) {
-        return;
+        return
       }
       // If the arguments to the call don't include `{ transaction: <anything>}`, then it's a linter problem.
       if (!hasTransactionArgument(callExpression)) {
         context.report({
           node: node,
           message: `Call to sequelize's ${node.name}() must pass a transaction`,
-        });
+        })
       }
     },
-  };
+  }
 }

@@ -1,9 +1,9 @@
-import { forceTransaction } from "./force-transaction";
+import { forceTransaction } from './force-transaction'
 
 module.exports = {
   rules: {
-    "force-transaction": {
+    'force-transaction': {
       create: forceTransaction,
     },
   },
-};
+}
